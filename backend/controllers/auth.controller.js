@@ -59,21 +59,66 @@ export const SignUp = async (req, res) => {
     setCookies(res, accessToken, refreshToken);
 
     res.status(201).json({
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-      message: "User Created Successfully",
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
     });
   } catch (error) {
+    console.log("Error in signup controller", error.message);
     res.status(500).json({ message: error.message });
   }
 };
 
 export const Login = async (req, res) => {
-  res.send("Login router");
+  try {
+    const { email, password } = req.body;
+
+    // Validate input
+    if (!email && !password) {
+      return res.status(401).json({ message: "Enter your email and password" });
+    }
+    if (!email) {
+      return res.status(401).json({ message: "Enter your email" });
+    }
+    if (!password) {
+      return res.status(401).json({ message: "Enter your password" });
+    }
+
+    // Check if user exists
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      console.log("User not found:", email); // Log if user is not found
+      return res.status(401).json({ message: "Invalid Email" });
+    }
+
+    // Log the user data (without password) for debugging
+    console.log("User found:", user);
+
+    // Check if password matches
+    const passwordMatch = await user.comparePassword(password);
+    if (!passwordMatch) {
+      console.log("Password mismatch for user:", email); // Log if password is incorrect
+      return res.status(401).json({ message: "Invalid Password" });
+    }
+
+    // If user exists and password is correct, proceed with token generation
+    const { accessToken, refreshToken } = generateToken(user._id);
+
+    await storeRefreshToken(user._id, refreshToken);
+    setCookies(res, accessToken, refreshToken);
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
+  } catch (error) {
+    console.log("Error in logging controller", error.message);
+    return res.status(500).json({ message: error.message });
+  }
 };
 
 export const Logout = async (req, res) => {
@@ -92,6 +137,8 @@ export const Logout = async (req, res) => {
     res.json({ message: "Logged out successfully" });
   } catch (error) {
     console.log("Error in logout controller", error.message);
-    res.status(500).json({ message: "Server error", error: error.message });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
 };

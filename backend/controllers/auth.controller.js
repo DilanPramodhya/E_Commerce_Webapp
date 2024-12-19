@@ -180,3 +180,6 @@ export const RefreshToken = async (req, res) => {
       .json({ message: "Server error", error: error.message });
   }
 };
+
+// TODO: implement get profile
+// export const GetProfile = async (req, res) => {};

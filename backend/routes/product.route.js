@@ -6,8 +6,7 @@ import {
   GetFeaturedProducts,
   GetProductByCategory,
   Recommendations,
-  ToggleFeaturedProducts,
-  UpdateProduct,
+  ToggleFeaturedProducts
 } from "../controllers/product.controller.js";
 import { AdminRoute, ProtectRoute } from "../middleware/auth.middleware.js";
 

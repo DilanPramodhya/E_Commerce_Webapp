@@ -122,3 +122,33 @@ export const GetProductByCategory = async (req, res) => {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
+
+export const ToggleFeaturedProducts = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+
+    if (product) {
+      product.isFeatured = !product.isFeatured;
+      const updatedProduct = await product.save();
+
+      // Update redis
+      await updateFeaturedProductCache();
+      res.json(updatedProduct);
+    } else {
+      res.status(404).json({ message: "Product not found" });
+    }
+  } catch (error) {
+    console.log("Error in ToggleFeaturedProducts controller", error.message);
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
+async function updateFeaturedProductCache() {
+  try {
+    const featuredProducts = await Product.find({ isFeatured: true }).lean(); // the lean method is use to return plain javascript objects instead of ful mongoose documents. This can significantly improve performance
+    await redis.set("featured_products", JSON.stringify(featuredProducts));
+  } catch (error) {
+    console.log("Error in update cache function", error.message);
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+}
